@@ -3,7 +3,7 @@
 module.exports = {
     db: 'mongodb://localhost/officeus-feeds',
     app: {
-        name: 'MEAN - A Modern Stack - Production'
+        name: 'OfficeUS Feeds'
     },
     facebook: {
         clientID: 'APP_ID',
