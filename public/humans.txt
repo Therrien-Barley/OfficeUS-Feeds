@@ -7,7 +7,7 @@
 
 # THANKS
 
-    <name>
+    Storefront for Art and Architecture
 
 # TECHNOLOGY COLOPHON
 

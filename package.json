@@ -1,12 +1,12 @@
 {
-  "name": "X-Gram",
-  "description": "X-Gram based on the mean.io stack.",
+  "name": "OfficeUS Feeds",
+  "description": "Image of OfficeUS through realtime feeds",
   "version": "0.0.1",
   "private": false,
   "author": "Troy Conrad Therrien",
   "repository": {
     "type": "git",
-    "url": "https://github.com/columbiagsapp/x-gram.gsapp.org.git"
+    "url": "https://github.com/Therrien-Barley/OfficeUS-Feeds"
   },
   "engines": {
     "node": "0.10.x",
