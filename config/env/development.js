@@ -2,6 +2,7 @@
 
 module.exports = {
     db: 'mongodb://localhost/officeus-feeds-dev',
+    port: 2701,
     app: {
         name: 'MEAN - A Modern Stack - Development'
     },
