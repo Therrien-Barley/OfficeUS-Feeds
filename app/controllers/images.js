@@ -1,6 +1,6 @@
 'use strict';
 
-var image_files_directory = "/var/www/x-gram.gsapp.org/public_html/public/img/instagram/";
+var image_files_directory = "/var/www/officeus.therrien-barley.com/public_html/apps/OfficeUS-Feeds/public/img/instagram/";
 var image_files_extension = ".jpg";
 
 var mongoose = require('mongoose'),
@@ -128,10 +128,9 @@ var upsertArrayHandlerRecursive = function(imgs, idx, next){
 					image.tags = upsert_image.tags;
 					
 
-					//set flags for later downloading from Instagram and uploading to Flickr
+					//set flags for later downloading from Instagram
 					image.downloaded = false;
 					image.uploaded = false;
-					image.added_to_flickr_set = false;
 
 					//set the city based on the hashtag
 					image.city = (upsert_image.city) ? upsert_image.city : "";
@@ -199,10 +198,9 @@ var upsert = exports.upsert = function(upsert_image, next) {
 
 		
 
-		//set flags for later downloading from Instagram and uploading to Flickr
+		//set flags for later downloading from Instagram
 		image.downloaded = false;
 		image.uploaded = false;
-		image.added_to_flickr_set = false;
 
 		//set the city based on the hashtag
 		image.city = (upsert_image.city) ? upsert_image.city : "";
@@ -382,192 +380,6 @@ exports.all = function(req, res) {
     });
 };
 
-function uploadArrayToFlickr(images, idx, flickr_api){
-
-    if(idx < images.length){
-
-    	var filename = images[idx].instagram_id + image_files_extension;
-        var fullpath = image_files_directory + filename;
-        
-        
-        console.log('[idx]: ' + idx);
-        console.dir(images[idx]);
-
-        //set tags for Flickr
-        var tags = [];
-        tags = images[idx].tags;
-        tags.push(images[idx].city);
-        tags.push(images[idx].username);
-        tags.push('instagram');
-        tags.push( 'X-Gram2014' );
-        tags.push( 'Studio-X' );
-        tags.push( 'GSAPP' );
-        var tagsString = tags.join(' ');
-
-        //set date stamp for Flickr
-		var unixTime = parseInt( images[idx].created_time ) * 1000;
-		var d = new Date(unixTime);
-
-		var desc;
-
-		if(images[idx].caption != null){
-        	desc = images[idx].caption + ' -- submitted ' + days[ d.getDay() ] + ', ' + months[ d.getMonth() ] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' at ' + d.getHours() + ':' + d.getMinutes();
-        }else{
-            console.log('photo has blank caption');
-            desc = '-- submitted ' + days[ d.getDay() ] + ', ' + months[ d.getMonth() ] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' at ' + d.getHours() + ':' + d.getMinutes();
-        }
-
-        console.log("desc: " + desc);
-
-        var credit = (images[idx].fullname) ? (images[idx].fullname + ' (' + images[idx].username + ')') : images[idx].username;
-
-        console.log('credit: ' + credit);
-
-
-        //build params object
-        var params = {
-            title: 'X-Gram 2014 submitted through instagram by ' + credit,
-            description: desc,
-            is_public: 1,
-            is_friend: 0,
-            is_family: 0,
-            hidden: 2,
-            content_type: 1,
-            tags: tagsString,
-            photo: fs.createReadStream(fullpath, {flags: 'r'})
-        };
-
-
-
-
-        // the method_name gets the special value of "upload" for uploads.
-        flickr_api('upload', params, function(err, response) {
-            if(err){
-                console.error("Could not upload photo. Error message:");
-                console.error(err.toString());
-            }else{
-                console.log('SUCCESS: uploaded photo with response:');
-                console.dir(response);
-                console.log('');
-
-                Image.update({ instagram_id: images[idx].instagram_id }, { uploaded: true, flickr_id: response.photoid }, function(err, result){
-                	console.log('returned from updating upload flag');
-			        if (err){
-			        	console.log("ERROR: trying to update database photo with _id: "+ images[idx]._id + " with flickr_id: "+ response.photoid);
-				    	console.log("error message: " + err);
-			        }else{
-			        	console.log("SUCCESS: updated database photo with _id: "+ images[idx]._id + " with flickr_id: "+ response.photoid + " result: ");
-			    		console.log(result);
-			    		console.log('\n');
-
-						flickr_api('flickr.photosets.addPhoto', {photoset_id: "72157642125547533", photo_id: response.photoid}, function(err, response2) {
-		                	if(err){
-		                		console.log('ERROR: Could not migrate photo with id '+ response.photoid + ' to photoset with id 72157642125547533');
-		                		console.log("error message: " + err);
-		                	}else{
-		                		console.log('SUCCESS: migrated photo with id '+ response.photoid + ' to photoset with id 72157642125547533');
-		                		console.log("response2: " + response2);
-
-		                		Image.update({ instagram_id: images[idx].instagram_id }, { added_to_flickr_set: true }, function(err, result){
-            						if(err){
-            							console.log('ERROR trying to update added_to_flickr_set flag');
-            							console.log('error message: ' + err);
-            						}else{
-	                					console.log('SUCCESS trying to update added_to_flickr_set flag');
-
-	                					//attempt to add Geolocation
-	                					if(images[idx].latitude != null){
-					                		flickr_api('flickr.photos.geo.setLocation', {photo_id: response.photoid, lat: images[idx].latitude, lon: images[idx].longitude}, function(err, response3){
-				                				if(err){
-				                					console.log("ERROR: trying to set geolocation of photo with id "+ response.photoid + ' with lat: '+ images[idx].latitude + ' and lon: '+ images[idx].longitude);
-				                					console.log("error message" + err);
-				                					console.log('\n\n-------\n\n\n');
-
-				                				}else{
-				                					console.log("SUCCESS: set geolocation of photo with id "+ response.photoid + ' with lat: '+ images[idx].latitude + ' and lon: '+ images[idx].longitude);
-				                					console.log(response3);
-				                				}
-				                				///////******* Iterate
-				                				console.log('\n\n-------\n\n\n');
-			                					idx++;
-												uploadArrayToFlickr(images, idx, flickr_api);
-					                		});//end flickr api call to set geolocation
-					                	}else{
-					                		///////******* Iterate
-					                		console.log('\n\n-------\n\n\n');
-					                		idx++;
-											uploadArrayToFlickr(images, idx, flickr_api);
-					                	}
-
-
-            						}//end if/else in Image.update added_to_flickr_set
-            					});//end Image.update added_to_flickr_set
-		                	}//end if/else on flickr_api call to add photo to set
-		                });//end flickr_api call to add photo to set
-			        }//end if/else on Images.update(uploaded: true)
-			    });//close Images.update(uploaded: true)
-			}//end if/else on first API call
-		});//end first api call
-
-
-
-
-
-
-
-
-/*
-        // the upload method is special, but this library automatically handles the
-        // hostname change
-        flickr_api({
-            method: 'upload',
-            title: 'X-Gram 2014 from ' + images[idx].username + ' in ' + images[idx].city,
-            description: images[idx].caption,
-            is_public: 1,
-            is_friend: 0,
-            is_family: 0,
-            hidden: 2,
-            photo: fs.createReadStream(fullpath)
-        }, function(err, response) {
-			if (err) {
-				console.error('Could not upload photo:', err);
-				console.log('continuing anyways'.red);
-				idx++;
-				uploadArrayToFlickr(images, idx, flickr_api);
-			}else {
-				var new_photo_id = response.photoid._content;
-				// usually, the method name is precisely the name of the API method, as they are here:
-				flickr_api({method: 'flickr.photos.getInfo', photo_id: new_photo_id}, function(err, response) {
-					console.log('Full photo info:', response);
-					flickr_api({method: 'flickr.photosets.addPhoto', photoset_id: 72157642125547533, photo_id: new_photo_id}, function(err, response) {
-				        if(err){
-				        	console.log('error adding photo to photoset');
-				        	console.log('continuing anyways'.red);
-				    	}else{
-				    		console.log('Added photo to photoset:', response);
-				    	}
-				    	idx++;
-						uploadArrayToFlickr(images, idx, flickr_api);
-					});
-				});
-			}
-        });
-	*/
-    }else{
-        console.log('\n\n\n\n\n\n\nall photos finished uploading!'.cyan)
-    }
-}
-
-exports.uploadAllToFlickr = function(flickr_api){
-	Image.find({ downloaded: true, uploaded: false }).exec(function(err, images) {
-        if (err) {
-            console.log("error attempting to get all non-uploaded images for allToUpload with msg: " + msg);
-        } else {
-            uploadArrayToFlickr(images, 0, flickr_api);
-        }
-    });
-
-};
 
 
 

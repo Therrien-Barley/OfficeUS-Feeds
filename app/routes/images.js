@@ -35,29 +35,6 @@ ig.use({ client_id: instagram_secrets.client_id,
 /////// END INSTAGRAM
 
 
-/////// FLICKR
-var Flickr = require('flickr-with-uploads').Flickr;
-
-//import Flickr secrets from json file
-//var flickr_secrets = require('../../secrets.json').flickr;
-
-//set up secrets for Flickr module
-//var flickr_client = new Flickr(flickr_secrets.key, flickr_secrets.secret, flickr_secrets.oauth_token, flickr_secrets.oauth_secret);
-
-var consumer_key = '1361ce967daf59821bc493392809c8e8';
-var consumer_secret = '82a41cbf24541227';
-var oauth_token = '72157632975405302-c06fccc501805e34';
-var oauth_token_secret = '0e10ea84f7e19ae4';
-
-// constructor arguments: new Flickr(consumer_key, consumer_secret, oauth_token, oauth_token_secret, base_url)
-var flickr_client = new Flickr(consumer_key, consumer_secret, oauth_token, oauth_token_secret);
-
-function flickr_api(method_name, data, callback) {
-    // overloaded as (method_name, data, callback)
-    return flickr_client.createRequest(method_name, data, true, callback).send();
-}
-/////// END FLICKR
-
 
 /////// GLOBALS
 var fetched_array; //container array for all fetched Instagram images
@@ -94,15 +71,10 @@ cities.forEach(function(c){
 
 //Initializes downloading all undownloaded images from Instagram
 function initImageDownloadCycle(){
-    images.downloadAll(uploadAllToFlickr);
-}
-
-function uploadAllToFlickr(){
-    images.uploadAllToFlickr(flickr_api);
+    images.downloadAll();
 }
 
 //Initializes fetching all images from Instagram and puts them in the database
-//to be later downloaded then uploaded to Flickr
 function initInstagramFetchCycle(){
 
     FETCHING_FROM_INSTAGRAM_BUSY_FLAG = true;
@@ -192,9 +164,6 @@ module.exports = function(app) {
         initInstagramFetchCycle();
     });
 
-    app.get('/upload-images-to-flickr', function(req, res){
-        initImageDownloadCycle();
-    });
 
     app.all ('/callback', function(req, res){
         console.log('\n\n\nreq:');
