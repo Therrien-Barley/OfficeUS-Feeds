@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-    db: 'mongodb://localhost/xgram-test',
+    db: 'mongodb://localhost/officeus-feeds-test',
     port: 3001,
     app: {
         name: 'X-Gram'

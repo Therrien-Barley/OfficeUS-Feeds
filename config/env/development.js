@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-    db: 'mongodb://localhost/xgram-dev',
+    db: 'mongodb://localhost/officeus-feeds-dev',
     app: {
         name: 'MEAN - A Modern Stack - Development'
     },
